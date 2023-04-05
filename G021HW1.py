@@ -3,6 +3,7 @@ from count_triangles import count_triangles
 from argparse import ArgumentParser
 from os.path import isfile
 from random import randint
+from time import time
 
 def h_(c):
     p = 8191
@@ -11,6 +12,29 @@ def h_(c):
         b = randint(0, p-1)
         return ((a*u + b) % p) % c
     return hash_func
+
+class Timer:
+    def __init__(self, name=""):
+        self.name = name
+        self.reset()
+
+    def __enter__(self):
+        self.__start_t = time()
+        self.__end_t = None
+        return self
+
+    def __exit__(self, *args):
+        self.__end_t = time()
+
+    def elapsed_time(self) -> float:
+        assert self.__start_t, "Timer has NOT started yet."
+        return (self.__end_t or time()) - self.__start_t
+    
+    def reset(self):
+        self.__start_t = self.__end_t = None
+
+    def __str__(self) -> str:
+        return (self.name+" = " if self.name else '')+f"{int(self.elapsed_time()*1000)} ms"
 
 def MR_ApproxTCwithNodeColors(rdd, C) -> int:
     pass
@@ -41,7 +65,6 @@ if __name__ == '__main__':
 
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
-
 
     print("Dataset =", args.path)
     print("Number of Edges =", rdd.count())
