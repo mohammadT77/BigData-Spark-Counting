@@ -66,9 +66,16 @@ if __name__ == '__main__':
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
 
+
+    # Evaluate hash colors
+    colors_dict = rdd.flatMap().distinct().map(lambda u: (u, h_c(u))).collectAsMap()
+
+
+
     print("Dataset =", args.path)
     print("Number of Edges =", rdd.count())
     print("Number of Colors =", args.C)
     print("Number of Repetitions =", args.R)
+
 
 
