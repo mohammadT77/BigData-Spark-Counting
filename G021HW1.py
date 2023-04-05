@@ -29,6 +29,10 @@ if __name__ == '__main__':
     sc = SparkContext(conf=conf)
 
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
-    print("Number of edges:", rdd.count())
-    
-    print(rdd.collect())
+    print("Dataset =", args.path)
+    print("Number of Edges =", rdd.count())
+    print("Number of Colors =", args.C)
+    print("Number of Repetitions =", args.R)
+
+    rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
+
