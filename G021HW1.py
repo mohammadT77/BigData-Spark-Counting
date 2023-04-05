@@ -114,6 +114,7 @@ def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
 
 
 if __name__ == '__main__':
+    # Configure argument parser
     parser = ArgumentParser(description="BDC - Group 021 - Assignment 1")
     
     parser.add_argument('C', type=int, help='Number of colors')
@@ -122,10 +123,12 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
+    # Validate arguments
     assert args.C >= 1, "Invalid argument C"
     assert args.R >= 1, "Invalid argument R"
     assert isfile(args.path), "Invalid data file path (argument FILE_PATH)"
     
+    # Timer instance for future uses
     timer = Timer()
 
     # Spark configuration
