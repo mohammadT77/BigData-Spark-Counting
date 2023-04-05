@@ -1,19 +1,68 @@
 from pyspark import SparkConf, SparkContext, RDD
-from count_triangles import count_triangles
 from argparse import ArgumentParser
 from os.path import isfile
 from random import randint
 from time import time
 
-def h_(c):
+# from count_triangles import count_triangles
+from collections import defaultdict
+
+def count_triangles(edges):
+    # Create a defaultdict to store the neighbors of each vertex
+    neighbors = defaultdict(set)
+    for edge in edges:
+        u, v = edge
+        neighbors[u].add(v)
+        neighbors[v].add(u)
+    # Initialize the triangle count to zero
+    triangle_count = 0
+
+    # Iterate over each vertex in the graph.
+    # To avoid duplicates, we count a triangle <u, v, w> only if u<v<w
+    for u in neighbors:
+        # Iterate over each pair of neighbors of u
+        for v in neighbors[u]:
+            if v > u:
+                for w in neighbors[v]:
+                    # If w is also a neighbor of u, then we have a triangle
+                    if w > v and w in neighbors[u]:
+                        triangle_count += 1
+    # Return the total number of triangles in the graph
+    return triangle_count
+
+
+def h_(c: int):
+    """
+    Returns a hash function with specified parameter C
+    
+    Examples
+        --------
+        >>> C = 4
+        >>> h_c = h_(C)
+        >>> h_c(1234)
+        3
+        >>> h_c(4321)
+        1
+    """
     p = 8191
-    def hash_func(u):
+    def hash_func(u: int) -> int:
         a = randint(1, p-1)
         b = randint(0, p-1)
         return ((a*u + b) % p) % c
     return hash_func
 
 class Timer:
+    """
+        Provide a class to calculate elapsed time of inside a context.
+
+        Examples
+        --------
+        >>> timer = Timer()
+        >>> with timer:
+        >>>     sleep(2)
+        >>>     timer.elapsed_time()
+        2.0001
+        """
     def __init__(self, name=""):
         self.name = name
         self.reset()
