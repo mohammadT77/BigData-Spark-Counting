@@ -144,7 +144,7 @@ if __name__ == '__main__':
     sc = SparkContext(conf=conf)
 
     # Reading dataset to RDD
-    rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
+    rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False).cache()
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
 
     print("Dataset =", args.path)
