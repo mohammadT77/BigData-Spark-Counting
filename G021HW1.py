@@ -114,7 +114,7 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
     # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd .repartitionAndSortWithinPartitions(C, lambda _: randint(0, C-1))  # randomly partitioning
+        rdd .partitionBy(C, lambda _: randint(0, C-1))  # randomly partitioning
             .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
             .sum() * C**2  # t_final
     )
