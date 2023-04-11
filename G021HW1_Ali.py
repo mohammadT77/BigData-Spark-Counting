@@ -38,7 +38,7 @@ def rawData_to_edges(rawData):
     u = int(vertexes[1])
     return [[u,v]]
 
-def MR_Approx_TCwithNodeColors(edges,c):
+def MR_ApproxTCwithNodeColors(edges,c):
     p = 8191
     a = rand.randint(1, p - 1)
     b = rand.randint(0, p - 1)
@@ -53,20 +53,25 @@ def MR_Approx_TCwithNodeColors(edges,c):
             edge_dict[hash_codeV1] = v, u
         return [(key, edge_dict[key]) for key in edge_dict.keys()]
 
-    def keytozero(pair):
-        pairs_dict = {}
-        pairs_dict[0] = pair[1]
-        return [(key, pairs_dict[key]) for key in pairs_dict.keys()]
-
     triangle_counting = (edges.flatMap(hash_function) # <-- MAP PHASE (0,(2000,2001))
                 .groupByKey() # (0,[(2000,2001),(2009,2008),...]
                 .mapValues(CountTriangles)  # (0,2200) , (1,2100) , (2,2000),3(
-                .flatMap(keytozero)
-                .groupByKey()
-                .mapValues(lambda count: sum(count))
+                .values()
+                .sum()*c*c
                 )
     return triangle_counting
 
+
+def MR_ApproxTCwithSparkPartitions(edges,c):
+    triangle_counting_random = (edges.flatMap(hash_function)  # <-- MAP PHASE (0,(2000,2001))
+                         .groupByKey()  # (0,[(2000,2001),(2009,2008),...]
+                         .mapValues(CountTriangles)  # (0,2200) , (1,2100) , (2,2000),3(
+                         #.flatMap(keytozero)
+                         #.groupByKey()
+                         #.mapValues(lambda count: sum(count))
+
+                         )
+    return triangle_counting_random
 
 
 
@@ -102,7 +107,7 @@ def main():
     cur_runtime = 0
     for i in range(r):
         start_time = time()
-        Number_of_triangles.append(MR_Approx_TCwithNodeColors(edges,c).collect()[0][1])
+        Number_of_triangles.append(MR_ApproxTCwithNodeColors(edges,c))#.collect()[0][1])
         cur_runtime = (time() - start_time)*1000
         avg_running_time+= cur_runtime
     avg_running_time = avg_running_time/r
@@ -112,7 +117,7 @@ def main():
     print("Number of Colors = "+str(c))
     print("Number of Repetitions = "+str(r))
 
-    print("Number of Triangle in the graph =",statistics.median(Number_of_triangles) *c*c)
+    print("Number of Triangle in the graph =",statistics.median(Number_of_triangles))
     print("Runtime = ",avg_running_time)
     #print(docs.top(1))
 
