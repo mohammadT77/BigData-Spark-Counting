@@ -1,13 +1,13 @@
-from pyspark import SparkConf, SparkContext, RDD
-from argparse import ArgumentParser
 from os.path import isfile
 from random import randint
+from argparse import ArgumentParser
 from time import time
+from pyspark import SparkConf, SparkContext, RDD
 
 # from count_triangles import count_triangles
 from collections import defaultdict
 
-def count_triangles(edges):
+def count_triangles(edges) -> int:
     # Create a defaultdict to store the neighbors of each vertex
     neighbors = defaultdict(set)
     for edge in edges:
@@ -85,30 +85,38 @@ class Timer:
     def __str__(self) -> str:
         return (self.name+" = " if self.name else '')+f"{int(self.elapsed_time()*1000)} ms"
 
-def MR_ApproxTCwithNodeColors(rdd:RDD, C:int) -> int:
+
+def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
+    # set h_c as the proper coloring hash function with C num of colors
     h_c = h_(C)
 
-    # Evaluate hash colors
+    # Evaluate hash colors and store it as a python dictionary once.
     colors_dict = rdd.flatMap(lambda x:x).distinct().map(lambda u: (u, h_c(u))).collectAsMap()
 
     def group_by_color(edge):
+        """
+        Returns the color of edge pairs if being in the same color, otherwise -1
+        """
         e1, e2 = edge
         c1, c2 = colors_dict[e1], colors_dict[e2]
         return c1 if c1==c2 else -1
     
-    t_final = (rdd.groupBy(group_by_color) # E(i) 
-        .filter(lambda gp: gp[0]!=-1)  # ignore edges with different color of vertices
-        .map(lambda gp: (gp[0], count_triangles(gp[1])))  # t(i)
-        .values().sum() * C*C  # t_final
+    # (Pay attention to the comments next to each line below)
+    t_final = (
+        rdd .groupBy(group_by_color)  # E(i) 
+            .filter(lambda group: group[0]!=-1)  # exclude edges with different color of vertices
+            .map(lambda group: (group[0], count_triangles(group[1])))  # t(i)
+            .values().sum() * C**2  # t_final
     )
     return t_final
 
 
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
-    # TODO: doesn't work well
+    # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd.mapPartitions(lambda edges: [count_triangles(edges)]) # t(i)
-            .sum() # t_final
+        rdd .repartitionAndSortWithinPartitions(C, lambda _: randint(0, C-1))  # randomly partitioning
+            .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
+            .sum() * C**2  # t_final
     )
     return t_final
 
@@ -116,18 +124,18 @@ def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
 if __name__ == '__main__':
     # Configure argument parser
     parser = ArgumentParser(description="BDC - Group 021 - Assignment 1")
-    
+
     parser.add_argument('C', type=int, help='Number of colors')
     parser.add_argument('R', type=int, help='Number of Repetitions')
     parser.add_argument('path', metavar="FILE_PATH", type=str, help='Dataset file path')
-    
+
     args = parser.parse_args()
-    
+
     # Validate arguments
     assert args.C >= 1, "Invalid argument C"
     assert args.R >= 1, "Invalid argument R"
     assert isfile(args.path), "Invalid data file path (argument FILE_PATH)"
-    
+
     # Timer instance for future uses
     timer = Timer()
 
@@ -138,7 +146,7 @@ if __name__ == '__main__':
     # Reading dataset to RDD
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
-    
+
     print("Dataset =", args.path)
     print("Number of Edges =", rdd.count())
     print("Number of Colors =", args.C)
@@ -161,7 +169,4 @@ if __name__ == '__main__':
         total_time = timer.elapsed_time()
         print(f"- Number of triangles = {t_final}")
         print(f"- Running time = {int(total_time*1000)} ms")
-        
-
-
 
