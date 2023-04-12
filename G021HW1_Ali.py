@@ -119,12 +119,9 @@ def main():
         avg_running_time1+= cur_runtime
     avg_running_time1 = avg_running_time1/r
 
-    for i in range(r):
-        start_time = time()
-        Number_of_triangles_spark.append(MR_ApproxTCwithSparkPartitions(edges,c))
-        cur_runtime = (time() - start_time)*1000
-        avg_running_time2+= cur_runtime
-    avg_running_time2 = avg_running_time2/r
+    start_time = time()
+    Number_of_triangles_spark = MR_ApproxTCwithSparkPartitions(edges,c)
+    avg_running_time2 = (time() - start_time)*1000
     # printing file information
 
     print("Dataset = "+data_path)
@@ -133,12 +130,12 @@ def main():
     print("Number of Repetitions = "+str(r))
 
     print("Approximation through node coloring")
-    print("- Number of Triangle (median over "+str(r)+ " runs =",statistics.median(Number_of_triangles))
-    print("- Running time (average over "+str(r)+" runs = ",avg_running_time1)
+    print("- Number of Triangle (median over "+str(r)+ " runs) =",statistics.median(Number_of_triangles))
+    print("- Running time (average over "+str(r)+" runs) = ",avg_running_time1)
 
     print("Approximation through spark partitions")
-    print("- Number of Triangle (median over "+str(r)+ " runs =", statistics.median(Number_of_triangles_spark))
-    print("- Running time (average over "+str(r)+" runs = ", avg_running_time2)
+    print("- Number of Triangle =", Number_of_triangles_spark)
+    print("- Running time = ", avg_running_time2)
     #print("Number of Triangle in the graph =", Number_of_triangles_spark[0].collect().__len__())#.collect())
 #setting global variables
 
