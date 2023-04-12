@@ -114,6 +114,8 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
     if C > 1:
         rdd = rdd.partitionBy(C, lambda _: randint(0, C-1))  # randomly partitioning
+    else:
+        rdd = rdd.repartition(C)
 
     # (Pay attention to the comments next to each line below)
     t_final = (
@@ -148,6 +150,7 @@ if __name__ == '__main__':
     # Reading dataset to RDD
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
+    rdd.repartition(args.C)
     rdd.cache()
 
     print("Dataset =", args.path)
