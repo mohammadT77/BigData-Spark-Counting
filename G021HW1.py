@@ -117,7 +117,7 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
 
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
     # (Pay attention to the comments next to each line below)
-    t_final = (
+    t_final = ( 
         rdd .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
             .sum() * C**2  # t_final
     )
@@ -148,15 +148,15 @@ if __name__ == '__main__':
 
     # Reading dataset to RDD
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
-    rdd = rdd.repartition(args.C)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
+    rdd = rdd.partitionBy(args.C, lambda t:int(t*random()*10)%args.C) # Randomly partitioned
     rdd = rdd.cache()
 
     print("Dataset =", args.path)
     print("Number of Edges =", rdd.count())
     print("Number of Colors =", args.C)
     print("Number of Repetitions =", args.R)
-
+    
     print("Approximation through node coloring")
     total_t_final = 0
     total_time = 0
@@ -169,6 +169,7 @@ if __name__ == '__main__':
     print(f"- Running time (average over {args.R} runs) = {int(total_time*1000)//args.R} ms")
     
     print("Approximation through Spark partitions")
+    
     with timer:
         t_final = MR_ApproxTCwithSparkPartitions(rdd, args.C)
         total_time = timer.elapsed_time()
