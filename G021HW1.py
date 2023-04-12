@@ -1,5 +1,5 @@
 from os.path import isfile
-from random import randint
+from random import randint, random
 from argparse import ArgumentParser
 from time import time
 from pyspark import SparkConf, SparkContext, RDD
@@ -100,26 +100,25 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
         c1, c2 = h_c(v1), h_c(v2)
         return [(c1, (v1, v2))] if c1==c2 else []
     
+    def f(a,b):
+        a = a[1] if isinstance(a, tuple) else a
+        b = b[1] if isinstance(b, tuple) else b
+        return a+b
     # (Pay attention to the comments next to each line below)
     t_final = (
         rdd .flatMap(group_by_color)  # E(i) 
             .groupByKey()
             .map(lambda group: (group[0], count_triangles(group[1])))  # t(i)
-            .values().sum() * C**2  # t_final
+            .reduce(f) * C**2  # t_final
     )
-    
     return t_final
 
 
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
-    if C > 1:
-        rdd = rdd.partitionBy(C, lambda _: randint(0, C-1))  # randomly partitioning
-    else:
-        rdd = rdd.repartition(C)
-
     # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
+        rdd .partitionBy(args.C, lambda _: randint(0, args.C-1))
+            .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
             .sum() * C**2  # t_final
     )
     return t_final
@@ -150,8 +149,8 @@ if __name__ == '__main__':
     # Reading dataset to RDD
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
-    rdd.repartition(args.C)
-    rdd.cache()
+    from pyspark.storagelevel import StorageLevel
+    rdd = rdd.persist(StorageLevel.MEMORY_AND_DISK)
 
     print("Dataset =", args.path)
     print("Number of Edges =", rdd.count())

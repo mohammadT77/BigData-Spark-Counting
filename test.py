@@ -21,8 +21,9 @@ if __name__ == '__main__':
     conf = SparkConf().setAppName("BDC: G021HW1 - TEST")
     sc = SparkContext(conf=conf)
 
-    rdd = sc.textFile(file_path, minPartitions=2, use_unicode=False).cache()
+    rdd = sc.textFile(file_path, use_unicode=False).cache()
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
+    rdd = rdd.cache()
 
     res = []
     for f in (MR_ApproxTCwithNodeColors, MR_ApproxTCwithSparkPartitions):
