@@ -3,6 +3,7 @@ from random import randint, random
 from argparse import ArgumentParser
 from time import time
 from pyspark import SparkConf, SparkContext, RDD
+from pyspark.storagelevel import StorageLevel
 
 # from count_triangles import count_triangles
 from collections import defaultdict
@@ -111,13 +112,13 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
             .map(lambda group: (group[0], count_triangles(group[1])))  # t(i)
             .reduce(f) * C**2  # t_final
     )
-    return t_final
+    return t_final if C > 1 else t_final[1]
 
 
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
     # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd .partitionBy(args.C, lambda _: randint(0, args.C-1))
+        rdd .partitionBy(C, lambda _: randint(0, C-1))
             .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
             .sum() * C**2  # t_final
     )
@@ -147,9 +148,8 @@ if __name__ == '__main__':
     sc = SparkContext(conf=conf)
 
     # Reading dataset to RDD
-    rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
-    rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
-    from pyspark.storagelevel import StorageLevel
+    rdd = sc.textFile(args.path, minPartitions=args.C)
+    rdd = rdd.map(lambda s: tuple(map(lambda x: int(x),s.split(',')))) # Convert edges from string to tuple.
     rdd = rdd.persist(StorageLevel.MEMORY_AND_DISK)
 
     print("Dataset =", args.path)
