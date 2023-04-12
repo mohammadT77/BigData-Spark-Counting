@@ -100,11 +100,7 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
         v1, v2 = edge
         c1, c2 = h_c(v1), h_c(v2)
         return [(c1, (v1, v2))] if c1==c2 else []
-    
-    def f(a,b):
-        a = a[1] if isinstance(a, tuple) else a
-        b = b[1] if isinstance(b, tuple) else b
-        return a+b
+
     # (Pay attention to the comments next to each line below)
     t_final = (
         rdd .flatMap(group_by_color)  # E(i) 
@@ -112,7 +108,7 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
             .map(lambda group: (group[0], count_triangles(group[1])))  # t(i)
             .values().sum() * C**2  # t_final
     )
-    return t_final if C > 1 else t_final[1]
+    return t_final
 
 
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
@@ -124,7 +120,7 @@ def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
     return t_final
 
 
-if __name__ == '__main__':
+def main():
     # Configure argument parser
     parser = ArgumentParser(description="BDC - Group 021 - Assignment 1")
 
@@ -175,3 +171,6 @@ if __name__ == '__main__':
         print(f"- Number of triangles = {t_final}")
         print(f"- Running time = {int(total_time*1000)} ms")
 
+
+if __name__ == '__main__':
+    main()
