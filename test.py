@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     res = []
     for f in (MR_ApproxTCwithNodeColors, MR_ApproxTCwithSparkPartitions):
-        res.append([(f.__name__,f.__name__)]+[test(f, rdd, c, r) for c,r in [(1,1), (2,5), (4,5), (8,5)]])
+        res.append([(f.__name__,f.__name__)]+[test(f, rdd.repartition(c), c, r) for c,r in [(1,1), (2,5), (4,5), (8,5)]])
 
     from rich.console import Console
     from rich.table import Table

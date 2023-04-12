@@ -118,8 +118,7 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
     # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd .partitionBy(C, lambda _: randint(0, C-1))
-            .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
+        rdd .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
             .sum() * C**2  # t_final
     )
     return t_final
@@ -148,9 +147,10 @@ if __name__ == '__main__':
     sc = SparkContext(conf=conf)
 
     # Reading dataset to RDD
-    rdd = sc.textFile(args.path, minPartitions=args.C)
-    rdd = rdd.map(lambda s: tuple(map(lambda x: int(x),s.split(',')))) # Convert edges from string to tuple.
-    rdd = rdd.persist(StorageLevel.MEMORY_AND_DISK)
+    rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
+    rdd = rdd.repartition(args.C)
+    rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
+    rdd = rdd.cache()
 
     print("Dataset =", args.path)
     print("Number of Edges =", rdd.count())
