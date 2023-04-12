@@ -44,14 +44,13 @@ def MR_ApproxTCwithNodeColors(edges,c):
     b = rand.randint(0, p - 1)
 
     def hash_function(edge):
-        edge_dict = {}
         v,u = edge
 
         hash_codeV1 = ((a * v + b) % p) % c
         hash_codeV2 = ((a * u + b) % p) % c
         if hash_codeV1 == hash_codeV2:
-            edge_dict[hash_codeV1] = v, u
-        return [(key, edge_dict[key]) for key in edge_dict.keys()]
+            return [(hash_codeV1,edge)]
+        return []
 
     triangle_counting = (edges.flatMap(hash_function) # <-- MAP PHASE (0,(2000,2001))
                 .groupByKey() # (0,[(2000,2001),(2009,2008),...]
@@ -63,13 +62,10 @@ def MR_ApproxTCwithNodeColors(edges,c):
 
 
 def MR_ApproxTCwithSparkPartitions(edges,c):
-    triangle_counting_random = (edges.flatMap(hash_function)  # <-- MAP PHASE (0,(2000,2001))
-                         .groupByKey()  # (0,[(2000,2001),(2009,2008),...]
+    triangle_counting_random = (edges.groupBy(lambda x: (rand.randint(0,c-1)))#.map(lambda x : (x[0], list(x[1])))
                          .mapValues(CountTriangles)  # (0,2200) , (1,2100) , (2,2000),3(
-                         #.flatMap(keytozero)
-                         #.groupByKey()
-                         #.mapValues(lambda count: sum(count))
-
+                         .values()
+                         .sum()*c*c
                          )
     return triangle_counting_random
 
@@ -103,24 +99,38 @@ def main():
     #setting global variables
 
     Number_of_triangles = []
-    avg_running_time = 0
+    Number_of_triangles_spark = []
+    avg_running_time1 = 0
+    avg_running_time2 = 0
     cur_runtime = 0
+
     for i in range(r):
         start_time = time()
-        Number_of_triangles.append(MR_ApproxTCwithNodeColors(edges,c))#.collect()[0][1])
+        Number_of_triangles.append(MR_ApproxTCwithNodeColors(edges,c))
         cur_runtime = (time() - start_time)*1000
-        avg_running_time+= cur_runtime
-    avg_running_time = avg_running_time/r
+        avg_running_time1+= cur_runtime
+    avg_running_time1 = avg_running_time1/r
+
+    for i in range(r):
+        start_time = time()
+        Number_of_triangles_spark.append(MR_ApproxTCwithSparkPartitions(edges,c))
+        cur_runtime = (time() - start_time)*1000
+        avg_running_time2+= cur_runtime
+    avg_running_time2 = avg_running_time2/r
     # printing file information
+
     print("Dataset = "+data_path)
     print("Number of Edges = ")
     print("Number of Colors = "+str(c))
     print("Number of Repetitions = "+str(r))
-
+    
     print("Number of Triangle in the graph =",statistics.median(Number_of_triangles))
-    print("Runtime = ",avg_running_time)
-    #print(docs.top(1))
+    print("Runtime = ",avg_running_time1)
 
+
+    print("Number of Triangle in the graph =", statistics.median(Number_of_triangles_spark))
+    print("Runtime = ", avg_running_time2)
+    #print("Number of Triangle in the graph =", Number_of_triangles_spark[0].collect())#[0].collect())
 #setting global variables
 
 if __name__ == '__main__':
