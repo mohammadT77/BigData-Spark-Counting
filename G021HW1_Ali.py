@@ -101,7 +101,7 @@ def main():
     data_path = sys.argv[3]
     assert os.path.isfile(data_path), "File or folder not found"
     rawData = sc.textFile(data_path).repartition(numPartitions=c).cache()
-    edges = rawData.flatMap(rawData_to_edges).repartition(numPartitions=c).cache()
+    edges = rawData.flatMap(rawData_to_edges)
     #docs.repartition(numPartitions=c)
 
     #setting global variables
