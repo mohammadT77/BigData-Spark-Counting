@@ -145,7 +145,7 @@ def main():
     # Reading dataset to RDD
     rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
-    rdd = rdd.partitionBy(args.C, lambda t:int(t*random()*10)%args.C) # Randome partitioning instead of repartition()
+    rdd = rdd.partitionBy(args.C, lambda _:randint(0, args.C-1)) # Randome partitioning instead of repartition()
     rdd = rdd.cache()
 
     print("Dataset =", args.path)
