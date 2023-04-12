@@ -53,33 +53,12 @@ def MR_ApproxTCwithNodeColors(rdd:RDD, C:int) -> int:
         else:
             return []    
 
-    print("new repetition")
-
-    start = time()
-    triangle_count = (rdd.flatMap(H_C))
-    end = time()
-    print("runtime color:", (end-start)*1000)
-
-    start = time()
-    triangle_count = (triangle_count.groupByKey())
-    end = time()
-    print("runtime grouping:", (end-start)*1000)
-
-    start = time()
-    triangle_count = (triangle_count.mapValues(count_triangles))
-    end = time()
-    print("runtime count triangle:", (end-start)*1000)
-
-    start = time()
-    triangle_count = (triangle_count.flatMap(keytozero)
-                .groupByKey()
-                .mapValues(lambda count: sum(count) * C**2)) 
-    end = time()
-    print("runtime sum of partition:", (end-start)*1000)
-    # triangle_count = (rdd.flatMap(H_C)
-    #     .groupByKey()
-    #     .mapValues(count_triangles)
-    #     ).values().sum() * C **2
+    triangle_count = (rdd.flatMap(H_C)
+        .groupByKey()
+        .mapValues(count_triangles)
+        .flatMap(keytozero)
+        .groupByKey()
+        .mapValues(lambda count: sum(count) * C**2))
     return triangle_count
 
 
@@ -122,7 +101,7 @@ if __name__ == '__main__':
         end = time()
         sum_time += (end - start)
         t_final_list.append(t_final)
-        print(t_final.values())
+        print(t_final.collect())
     # print(f"- Number of triangles (median over {args.R} runs) = {median(t_final_list)}")
     print(f"- Running time (average over {args.R} runs) = {int(sum_time*1000)/args.R} ms")
     
