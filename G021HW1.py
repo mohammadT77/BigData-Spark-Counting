@@ -47,8 +47,10 @@ def h_(c: int):
     p = 8191
     a = randint(1, p-1)
     b = randint(0, p-1)
+
     def hash_func(u: int) -> int:
         return ((a*u + b) % p) % c
+    
     return hash_func
 
 class Timer:
@@ -90,32 +92,32 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
     # set h_c as the proper coloring hash function with C num of colors
     h_c = h_(C)
 
-    # Evaluate hash colors and store it as a python dictionary once.
-    colors_dict = rdd.flatMap(lambda x:x).distinct().map(lambda u: (u, h_c(u))).collectAsMap()
-
     def group_by_color(edge):
         """
         Returns the color of edge pairs if being in the same color, otherwise -1
         """
-        e1, e2 = edge
-        c1, c2 = colors_dict[e1], colors_dict[e2]
-        return c1 if c1==c2 else -1
+        v1, v2 = edge
+        c1, c2 = h_c(v1), h_c(v2)
+        return [(c1, (v1, v2))] if c1==c2 else []
     
     # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd .map(group_by_color)  # E(i) 
-            .filter(lambda group: group[0]!=-1)  # exclude edges with different color of vertices
+        rdd .flatMap(group_by_color)  # E(i) 
+            .groupByKey()
             .map(lambda group: (group[0], count_triangles(group[1])))  # t(i)
             .values().sum() * C**2  # t_final
     )
+    
     return t_final
 
 
 def MR_ApproxTCwithSparkPartitions(rdd:RDD, C:int) -> int:
+    if C > 1:
+        rdd = rdd.partitionBy(C, lambda _: randint(0, C-1))  # randomly partitioning
+
     # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd .partitionBy(C, lambda _: randint(0, C-1))  # randomly partitioning
-            .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
+        rdd .mapPartitions(lambda edges: (yield count_triangles(edges)))  # t(i)
             .sum() * C**2  # t_final
     )
     return t_final
@@ -144,8 +146,9 @@ if __name__ == '__main__':
     sc = SparkContext(conf=conf)
 
     # Reading dataset to RDD
-    rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False).cache()
+    rdd = sc.textFile(args.path, minPartitions=args.C, use_unicode=False)
     rdd = rdd.map(lambda s: eval(b'('+s+b')')) # Convert edges from string to tuple.
+    rdd.cache()
 
     print("Dataset =", args.path)
     print("Number of Edges =", rdd.count())

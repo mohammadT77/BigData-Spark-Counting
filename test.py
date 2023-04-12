@@ -54,3 +54,5 @@ if __name__ == '__main__':
 
     console = Console()
     console.print(num_table)
+
+    input("Enter to exit!")
