@@ -44,7 +44,7 @@ if __name__ == '__main__':
     console.print(num_table)
 
     num_table = Table(title="Time (MS)")
-    columns = ["C1R1", "C2R5", "C4R5", "C8R5"]
+    columns = ["ALGO", "C1R1", "C2R5", "C4R5", "C8R5"]
 
     for column in columns:
         num_table.add_column(column)

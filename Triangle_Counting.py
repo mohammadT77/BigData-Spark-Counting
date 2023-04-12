@@ -44,20 +44,20 @@ def MR_Approx_TCwithNodeColors(edges,c):
     b = rand.randint(0, p - 1)
 
     def hash_function(edge):
-        edge_dict = {}
         v,u = edge
 
         hash_codeV1 = ((a * v + b) % p) % c
         hash_codeV2 = ((a * u + b) % p) % c
         if hash_codeV1 == hash_codeV2:
-            edge_dict[hash_codeV1] = v, u
-        return [(key, edge_dict[key]) for key in edge_dict.keys()]
+            return [(hash_codeV1, (v, u))]
+        else:
+            return []
 
     def keytozero(pair):
         pairs_dict = {}
         pairs_dict[0] = pair[1]
         return [(key, pairs_dict[key]) for key in pairs_dict.keys()]
-
+    print(edges.flatMap(hash_function).collect())
     triangle_counting = (edges.flatMap(hash_function) # <-- MAP PHASE (0,(2000,2001))
                 .groupByKey() # (0,[(2000,2001),(2009,2008),...]
                 .mapValues(CountTriangles)  # (0,2200) , (1,2100) , (2,2000),3(

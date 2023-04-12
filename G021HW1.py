@@ -45,9 +45,9 @@ def h_(c: int):
         1
     """
     p = 8191
+    a = randint(1, p-1)
+    b = randint(0, p-1)
     def hash_func(u: int) -> int:
-        a = randint(1, p-1)
-        b = randint(0, p-1)
         return ((a*u + b) % p) % c
     return hash_func
 
@@ -103,7 +103,7 @@ def MR_ApproxTCwithNodeColors(rdd: RDD, C: int) -> int:
     
     # (Pay attention to the comments next to each line below)
     t_final = (
-        rdd .groupBy(group_by_color)  # E(i) 
+        rdd .map(group_by_color)  # E(i) 
             .filter(lambda group: group[0]!=-1)  # exclude edges with different color of vertices
             .map(lambda group: (group[0], count_triangles(group[1])))  # t(i)
             .values().sum() * C**2  # t_final
